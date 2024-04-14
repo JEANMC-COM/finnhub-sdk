@@ -1,0 +1,6 @@
+package-name: '@jeanmc/finnhub-sdk'
+
+eol: lf
+clear-output-folder: false
+generate-metadata: true
+typescript: true

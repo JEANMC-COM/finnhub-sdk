@@ -1,0 +1,39 @@
+stages:
+  - release
+
+variables:
+  YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+  YARN_ENABLE_TRANSPARENT_WORKSPACES: 'true'
+
+release:
+  stage: release
+  image: node:20
+  interruptible: true
+  services:
+    - name: swaggerapi/swagger-converter:v1.0.4
+      alias: swagger-converter
+  variables:
+    AUTOREST_OUTPUT_FOLDER: ./packages/generated
+    SWAGGER_CONVERT_API: http://swagger-converter:8080/api/convert
+  before_script:
+    - apt-get update && apt-get install -y curl
+    - npm install --location=global autorest semver
+  script:
+    - ./scripts/generate.sh
+    - if [ ! -d $AUTOREST_OUTPUT_FOLDER ] && [ $? -eq 0 ]; then exit 0; fi
+    - yarn && yarn workspace @jeanmc/finnhub-sdk add -D builtin-modules @types/node
+    - cd $AUTOREST_OUTPUT_FOLDER
+    - export PKG_VERSION=$(node -p "require(\"./package.json\").version")
+    - export PKG_BUILD_HASH=$(node -p "require(\"./package.json\").buildHash")
+    - |
+      echo "======================================================================================================"
+      echo "PKG_VERSION = $PKG_VERSION"
+      echo "PKG_BUILD_HASH = $PKG_BUILD_HASH"
+      echo "======================================================================================================"
+    - |
+      if [ "$PKG_VERSION" = "undefined" ] || [ "$PKG_BUILD_HASH" = "undefined" ]; then
+        echo "Unknown package info"
+        exit 1;
+      fi
+    - yarn npm publish
+    - yarn npm tag add @jeanmc/finnhub-sdk@$PKG_VERSION $PKG_BUILD_HASH
