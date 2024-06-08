@@ -2,6 +2,7 @@ stages:
   - release
 
 variables:
+  PACKAGE_NAME: '@jeanmc/finnhub-sdk'
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
   YARN_ENABLE_TRANSPARENT_WORKSPACES: 'true'
 
@@ -21,7 +22,7 @@ release:
   script:
     - ./scripts/generate.sh
     - if [ ! -d $AUTOREST_OUTPUT_FOLDER ] && [ $? -eq 0 ]; then exit 0; fi
-    - yarn && yarn workspace @jeanmc/finnhub-sdk add -D builtin-modules @types/node
+    - yarn && yarn workspace $PACKAGE_NAME add -D builtin-modules @types/node
     - cd $AUTOREST_OUTPUT_FOLDER
     - export PKG_VERSION=$(node -p "require(\"./package.json\").version")
     - export PKG_BUILD_HASH=$(node -p "require(\"./package.json\").buildHash")
@@ -36,4 +37,12 @@ release:
         exit 1;
       fi
     - yarn npm publish
-    - yarn npm tag add @jeanmc/finnhub-sdk@$PKG_VERSION $PKG_BUILD_HASH
+    - yarn npm tag add $PACKAGE_NAME@$PKG_VERSION $PKG_BUILD_HASH
+    # send out notification email
+    - export NOTIFICATION_SUBJECT="Package $PACKAGE_NAME ($PKG_VERSION) has been published"
+    - |
+      node $MAILERSEND_BUILD_PACKAGE_RELEASE_NOTIFICATION_PAYLOAD | curl -X POST https://api.mailersend.com/v1/email \
+        -H 'Content-Type: application/json' \
+        -H 'X-Requested-With: XMLHttpRequest' \
+        -H "Authorization: Bearer $MAILERSEND_API_TOKEN" \
+        -d @-
