@@ -1,8 +1,8 @@
 diff --git a/lib/PackageJsonLookup.js b/lib/PackageJsonLookup.js
-index 7dc6b96fb143cabbe09898902a9865eb51508ec6..32ad233a63a9fe3313dd9d818e7667a32fa2d7b3 100644
+index 4c7bd8e74960d271192d4415627ad8de7dd1b238..f529e218d4c05ac684b92018202588443322c9d8 100644
 --- a/lib/PackageJsonLookup.js
 +++ b/lib/PackageJsonLookup.js
-@@ -123,6 +123,16 @@ class PackageJsonLookup {
+@@ -123,6 +123,15 @@ class PackageJsonLookup {
       * @returns an absolute path to a folder containing a package.json file
       */
      tryGetPackageFolderFor(fileOrFolderPath) {
@@ -15,7 +15,6 @@ index 7dc6b96fb143cabbe09898902a9865eb51508ec6..32ad233a63a9fe3313dd9d818e7667a3
 +                pnpApi.findPackageLocator(fileOrFolderPath)
 +            ).packageLocation;
 +        }
-+
          // Convert it to an absolute path
          const resolvedFileOrFolderPath = path.resolve(fileOrFolderPath);
          // Optimistically hope that the starting string is already in the cache,

@@ -1,9 +1,9 @@
 #!/bin/sh
 # cSpell:ignore modelerfour
 
-FORCE_GEN="0"
-if [ "$1" = "--force" ]; then
-  FORCE_GEN="1"
+if [ "$SWAGGER_FILE_URL" = "" ]; then
+  echo "No swagger file url"
+  exit 1
 fi
 
 if [ "$SWAGGER_CONVERT_API" = "" ]; then
@@ -18,34 +18,37 @@ if [ ! -d ./tmp ]; then
   mkdir ./tmp
 fi
 
-FINNHUB_SWAGGER_FILE=https://finnhub.io/static/swagger.json
-SWAGGER_TMP=./tmp/swagger-temp.json
 SWAGGER_FILE=./tmp/swagger.json
+SWAGGER_FILE_V3=./tmp/swagger-v3.json
 
 check_error () {
   if [ $? -ne 0 ]; then
-    echo "Failed to fetch API swagger file"
+    echo "There are errors. Exiting..."
     exit 1
   fi
 }
 
-echo "======================================================================================================"
-echo " Fetching API swagger file"
-echo "======================================================================================================"
-curl --fail-with-body $FINNHUB_SWAGGER_FILE > $SWAGGER_TMP
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Fetching API swagger file ┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+
+curl --fail-with-body $SWAGGER_FILE_URL > $SWAGGER_FILE
 check_error
 
-echo "======================================================================================================"
-echo " Converting to OpenAPI 3"
-echo "======================================================================================================"
-cat $SWAGGER_TMP | curl --fail-with-body -H 'Content-Type: application/json' -X POST --data-binary @- $SWAGGER_CONVERT_API > $SWAGGER_FILE
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Converting to OpenAPI 3 ┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+
+cat $SWAGGER_FILE | curl --fail-with-body -H 'Content-Type: application/json' -X POST --data-binary @- $SWAGGER_CONVERT_API | sed -e 's/\\n/\\\\n/g' > $SWAGGER_FILE_V3
 check_error
 
-echo "======================================================================================================"
-echo " Included endpoints"
-echo "======================================================================================================"
-ENDPOINTS=$(node -p "Object.keys(require(\"$SWAGGER_FILE\").paths).sort()")
-node -p "JSON.stringify($ENDPOINTS, null, 4)"
+echo "┏━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Included endpoints ┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━┛"
+
+ENDPOINTS=$(jq '.paths | keys' $SWAGGER_FILE_V3)
+echo $ENDPOINTS | jq -r '.'
+check_error
 
 SHA_EXE=$(which sha1sum)
 if [ $? -eq 1 ]; then
@@ -53,60 +56,87 @@ if [ $? -eq 1 ]; then
 fi
 
 BUILD_HASH=$(echo $ENDPOINTS | $SHA_EXE | cut -d' ' -f1)
-PKG_INFO=$(yarn npm info @jeanmc/finnhub-sdk --json 2>&1 | head -n 1)
-PKG_INFO_ERROR=$(node -p "JSON.parse('$PKG_INFO')?.type === 'error'")
-PKG_INFO_ERROR_MSG=$(node -p "JSON.parse('$PKG_INFO')?.data ?? ''")
-BUILD_HASH_EXISTS=$(node -p "Object.keys(JSON.parse('$PKG_INFO')?.['dist-tags'] ?? {}).includes('$BUILD_HASH')")
-DEPLOY_VERSION=$(node -p "JSON.parse('$PKG_INFO')?.version ?? ''")
+PKG_INFO=$(yarn npm info $PACKAGE_NAME --json 2>&1 | head -n 1)
+PKG_INFO_ERROR=$(echo $PKG_INFO | jq -r '.type')
+PKG_INFO_ERROR_MSG=$(echo $PKG_INFO | jq -r '.data')
+BUILD_HASH_EXISTS=$(echo $PKG_INFO | jq -r '.["dist-tags"] | keys | contains(["'$BUILD_HASH'"])')
+DEPLOY_VERSION=$(echo $PKG_INFO | jq -r '.version')
+check_error
 
-if [ "$PKG_INFO_ERROR" = "true" ] && [ "$PKG_INFO_ERROR_MSG" != "Package not found" ]; then
-  echo "======================================================================================================"
-  echo " Failed with error: $PKG_INFO_ERROR_MSG"
-  echo "======================================================================================================"
+if [ "$PKG_INFO_ERROR" = "error" ] && [ "$PKG_INFO_ERROR_MSG" != "Package not found" ]; then
+  echo "┏━━━━━━━━━━━━━━━━━━━┓"
+  echo "┃ Failed with error ┃"
+  echo "┗━━━━━━━━━━━━━━━━━━━┛"
+  echo $PKG_INFO_ERROR_MSG
   exit 1
 fi
 
+
+FORCE_GEN="0"
+if [ "$1" = "--force" ]; then
+  FORCE_GEN="1"
+fi
+
 if [ "$FORCE_GEN" = "0" ] && [ "$BUILD_HASH_EXISTS" = "true" ]; then
-  echo "======================================================================================================"
-  echo " Finnhub API version already existed: $DEPLOY_VERSION"
-  echo "======================================================================================================"
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+  echo "┃ Target version is already existed ┃"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+  echo $DEPLOY_VERSION
   exit 0
 fi
 
-if [ "$DEPLOY_VERSION" != "" ]; then
+if [ "$DEPLOY_VERSION" != "null" ]; then
   DEPLOY_VERSION=$(semver --increment minor $DEPLOY_VERSION)
 else
   DEPLOY_VERSION="1.0.0"
 fi
+check_error
 
-echo "======================================================================================================"
-echo " Applying patches"
-echo "======================================================================================================"
+echo "┏━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Applying patches ┃"
+echo "┗━━━━━━━━━━━━━━━━━━┛"
 
-cat $SWAGGER_FILE | sed -e 's/\\n/\\\\n/g' > $SWAGGER_TMP
-cat $SWAGGER_TMP > $SWAGGER_FILE
-
-for file in ./patches/*.js; do
+# escape special charaters in json string
+for file in ./patches/*.sh; do
   echo "Applying '$(basename $file)'"
-  node -p "const schema=require(\"./$SWAGGER_FILE\"); const patch=require(\"./$file\"); JSON.stringify(patch(schema));" > $SWAGGER_TMP
-  cat $SWAGGER_TMP > $SWAGGER_FILE
+  . $file
 done
+check_error
 
-echo "======================================================================================================"
-echo " Generating Finnhub API version: $DEPLOY_VERSION"
-echo " Build Hash: $BUILD_HASH"
-echo "======================================================================================================"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Generating new API version ┃ $DEPLOY_VERSION"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+echo "┏━━━━━━━━━━━━┓"
+echo "┃ Build Hash ┃ $BUILD_HASH"
+echo "┗━━━━━━━━━━━━┛"
+
+if [ "$DEPLOY_VERSION" = "" ] && [ "$BUILD_HASH" = "" ]; then
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+  echo "┃ Empty 'version' or 'build hash' ┃"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+  exit 1
+fi
 
 autorest ./config-file.yml \
   --add-credentials=false \
   --azure-sdk-for-js=false \
-  --input-file=$SWAGGER_FILE \
+  --input-file=$SWAGGER_FILE_V3 \
   --output-folder=$AUTOREST_OUTPUT_FOLDER \
+  --package-name=$PACKAGE_NAME \
   --package-version=$DEPLOY_VERSION \
-  --use:@autorest/modelerfour \
-  --use:@autorest/typescript
+  --use=@autorest/modelerfour \
+  --use=@autorest/typescript
+check_error
+
+git apply ./patches/rollup.config.patch
 
 cp ./.npmignore $AUTOREST_OUTPUT_FOLDER/
+cd $AUTOREST_OUTPUT_FOLDER
 
-node -p "const pkgInfo=require(\"$AUTOREST_OUTPUT_FOLDER/package.json\"); pkgInfo.buildHash='$BUILD_HASH'; JSON.stringify(pkgInfo, null, 2);" > $AUTOREST_OUTPUT_FOLDER/package-temp.json
-mv $AUTOREST_OUTPUT_FOLDER/package-temp.json $AUTOREST_OUTPUT_FOLDER/package.json
+FILE=$(cat ./package.json)
+echo $FILE | jq '.buildHash = "'$BUILD_HASH'"' > ./package.json
+
+if [ "$PACKAGE_PUBLISH" = "true" ]; then
+  yarn workspace $PACKAGE_NAME add -D builtin-modules @types/node
+  yarn npm publish && yarn npm tag add $PACKAGE_NAME@$DEPLOY_VERSION $BUILD_HASH
+fi

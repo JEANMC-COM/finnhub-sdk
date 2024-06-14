@@ -4,7 +4,6 @@ stages:
 variables:
   PACKAGE_NAME: '@jeanmc/finnhub-sdk'
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
-  YARN_ENABLE_TRANSPARENT_WORKSPACES: 'true'
 
 release:
   stage: release
@@ -15,33 +14,17 @@ release:
       alias: swagger-converter
   variables:
     AUTOREST_OUTPUT_FOLDER: ./packages/generated
+    PACKAGE_PUBLISH: 'true'
     SWAGGER_CONVERT_API: http://swagger-converter:8080/api/convert
+    SWAGGER_FILE_URL: https://finnhub.io/static/swagger.json
   before_script:
-    - apt-get update && apt-get install -y curl
+    - apt-get update && apt-get install -y curl jq
     - npm install --location=global autorest semver
   script:
     - ./scripts/generate.sh
-    - if [ ! -d $AUTOREST_OUTPUT_FOLDER ] && [ $? -eq 0 ]; then exit 0; fi
-    - yarn && yarn workspace $PACKAGE_NAME add -D builtin-modules @types/node
-    - cd $AUTOREST_OUTPUT_FOLDER
-    - export PKG_VERSION=$(node -p "require(\"./package.json\").version")
-    - export PKG_BUILD_HASH=$(node -p "require(\"./package.json\").buildHash")
-    - |
-      echo "======================================================================================================"
-      echo "PKG_VERSION = $PKG_VERSION"
-      echo "PKG_BUILD_HASH = $PKG_BUILD_HASH"
-      echo "======================================================================================================"
-    - |
-      if [ "$PKG_VERSION" = "undefined" ] || [ "$PKG_BUILD_HASH" = "undefined" ]; then
-        echo "Unknown package info"
-        exit 1;
-      fi
-    - yarn npm publish
-    - yarn npm tag add $PACKAGE_NAME@$PKG_VERSION $PKG_BUILD_HASH
     # send out notification email
-    - export NOTIFICATION_SUBJECT="Package $PACKAGE_NAME ($PKG_VERSION) has been published"
     - |
-      node $MAILERSEND_BUILD_PACKAGE_RELEASE_NOTIFICATION_PAYLOAD | curl -X POST https://api.mailersend.com/v1/email \
+      node $MAILERSEND_BUILD_PACKAGE_RELEASE_NOTIFICATION_PAYLOAD | curl -X POST $MAILERSEND_API_URL \
         -H 'Content-Type: application/json' \
         -H 'X-Requested-With: XMLHttpRequest' \
         -H "Authorization: Bearer $MAILERSEND_API_TOKEN" \

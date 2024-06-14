@@ -8,6 +8,6 @@
     "packages/*"
   ],
   "resolutions": {
-    "@rushstack/node-core-library@npm:4.1.0": "patch:@rushstack/node-core-library@npm%3A4.1.0#~/.yarn/patches/@rushstack-node-core-library-npm-4.1.0-8464007b08.patch"
+    "@rushstack/node-core-library@npm:5.4.1": "patch:@rushstack/node-core-library@npm%3A5.4.1#~/.yarn/patches/@rushstack-node-core-library-npm-5.4.1-33fef13265.patch"
   }
 }

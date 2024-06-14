@@ -1,0 +1,11 @@
+diff --git a/packages/generated/rollup.config.js b/packages/generated/rollup.config.mjs
+index 486aeab..c821ebc 100644
+--- a/packages/generated/rollup.config.js
++++ b/packages/generated/rollup.config.mjs
+@@ -112,4 +112,5 @@ export function makeConfig(pkg, options) {
+   return config;
+ }
+
+-export default makeConfig(require("./package.json"));
++import packageJSON from "./package.json" assert { type: "json"};
++export default makeConfig(packageJSON);
