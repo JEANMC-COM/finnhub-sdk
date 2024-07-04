@@ -138,5 +138,6 @@ echo $FILE | jq '.buildHash = "'$BUILD_HASH'"' > ./package.json
 
 if [ "$PACKAGE_PUBLISH" = "true" ]; then
   yarn workspace $PACKAGE_NAME add -D builtin-modules @types/node
-  yarn npm publish && yarn npm tag add $PACKAGE_NAME@$DEPLOY_VERSION $BUILD_HASH
+  yarn npm publish && sleep 10
+  yarn npm tag add $PACKAGE_NAME@$DEPLOY_VERSION $BUILD_HASH
 fi
