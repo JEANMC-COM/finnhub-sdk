@@ -71,7 +71,6 @@ if [ "$PKG_INFO_ERROR" = "error" ] && [ "$PKG_INFO_ERROR_MSG" != "Package not fo
   exit 1
 fi
 
-
 FORCE_GEN="0"
 if [ "$1" = "--force" ]; then
   FORCE_GEN="1"
@@ -137,7 +136,7 @@ FILE=$(cat ./package.json)
 echo $FILE | jq '.buildHash = "'$BUILD_HASH'"' > ./package.json
 
 if [ "$PACKAGE_PUBLISH" = "true" ]; then
-  yarn workspace $PACKAGE_NAME add -D builtin-modules @types/node
+  yarn
   yarn npm publish && sleep 10
   yarn npm tag add $PACKAGE_NAME@$DEPLOY_VERSION $BUILD_HASH
 fi
