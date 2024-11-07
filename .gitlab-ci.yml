@@ -11,12 +11,12 @@ variables:
 
 release:
   stage: release
-  image: node:20
+  image: node:22
   interruptible: true
   except:
     - .email-notification
   services:
-    - name: swaggerapi/swagger-converter:v1.0.4
+    - name: swaggerapi/swagger-converter:v1.0.5
       alias: swagger-converter
   variables:
     AUTOREST_OUTPUT_FOLDER: ./packages/generated
