@@ -1,6 +1,8 @@
 include:
   - project: 'jeanmc/ci-template'
     file: '/job-templates/email-notification.yml'
+  - project: 'jeanmc/ci-template'
+    file: '/job-templates/secret-injector.yml'
 
 stages:
   - release
@@ -25,6 +27,7 @@ release:
     SWAGGER_FILE_URL: https://finnhub.io/static/swagger.json
   before_script:
     - !reference [.email-notification, before_script]
+    - !reference [.secret-injector, before_script]
     - npm install --location=global autorest semver
   script:
     - ./scripts/generate.sh
