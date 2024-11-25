@@ -7,5 +7,5 @@ index 486aeab..c821ebc 100644
  }
 
 -export default makeConfig(require("./package.json"));
-+import packageJSON from "./package.json" assert { type: "json"};
++import packageJSON from "./package.json" with { type: "json"};
 +export default makeConfig(packageJSON);

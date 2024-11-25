@@ -6,6 +6,11 @@ if [ "$SWAGGER_FILE_URL" = "" ]; then
   exit 1
 fi
 
+if [ "$PACKAGE_NAME" = "" ]; then
+  echo "No package name"
+  exit 1
+fi
+
 if [ "$SWAGGER_CONVERT_API" = "" ]; then
   SWAGGER_CONVERT_API=https://converter.swagger.io/api/convert
 fi

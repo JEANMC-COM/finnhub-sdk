@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "author": "Jean M.C. <manchunyip2008@gmail.com>",
   "private": true,
-  "packageManager": "yarn@4.5.1",
+  "packageManager": "yarn@4.5.3",
   "workspaces": [
     "packages/*"
   ],
   "resolutions": {
-    "@rushstack/node-core-library@npm:5.9.0": "patch:@rushstack/node-core-library@npm%3A5.9.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.9.0-b78071dd63.patch"
+    "@rushstack/node-core-library@npm:5.10.0": "patch:@rushstack/node-core-library@npm%3A5.10.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.10.0-bd3ee2ff50.patch"
   }
 }
