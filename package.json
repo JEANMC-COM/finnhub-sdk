@@ -1,13 +1,29 @@
 {
   "name": "finnhub-sdk",
   "version": "0.0.0",
-  "author": "Jean M.C. <manchunyip2008@gmail.com>",
   "private": true,
-  "packageManager": "yarn@4.5.3",
+  "keywords": [
+    "data",
+    "finnhub",
+    "realtime",
+    "stock"
+  ],
+  "bugs": {
+    "url": "https://github.com/JEANMC-COM/finnhub-sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JEANMC-COM/finnhub-sdk"
+  },
+  "author": "Jean M.C. <manchunyip2008@gmail.com>",
   "workspaces": [
     "packages/*"
   ],
   "resolutions": {
-    "@rushstack/node-core-library@npm:5.10.0": "patch:@rushstack/node-core-library@npm%3A5.10.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.10.0-bd3ee2ff50.patch"
-  }
+    "@rushstack/node-core-library@npm:5.11.0": "patch:@rushstack/node-core-library@npm%3A5.11.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.11.0-883ece811c.patch"
+  },
+  "devDependencies": {
+    "sort-package-json": "^2.14.0"
+  },
+  "packageManager": "yarn@4.6.0"
 }

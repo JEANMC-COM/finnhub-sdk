@@ -1,5 +1,5 @@
 #!/bin/sh
-# cSpell:ignore modelerfour
+# cSpell:ignore modelerfour autorest rollup npmignore
 
 if [ "$SWAGGER_FILE_URL" = "" ]; then
   echo "No swagger file url"
@@ -77,7 +77,7 @@ if [ "$PKG_INFO_ERROR" = "error" ] && [ "$PKG_INFO_ERROR_MSG" != "Package not fo
 fi
 
 FORCE_GEN="0"
-if [ "$1" = "--force" ]; then
+if [ "$1" = "--force" ] || [ "$PACKAGE_TEST_BUILD" = "true" ]; then
   FORCE_GEN="1"
 fi
 
@@ -90,7 +90,9 @@ if [ "$FORCE_GEN" = "0" ] && [ "$BUILD_HASH_EXISTS" = "true" ]; then
 fi
 
 if [ "$DEPLOY_VERSION" != "null" ]; then
-  DEPLOY_VERSION=$(semver --increment minor $DEPLOY_VERSION)
+  if [ "$PACKAGE_TEST_BUILD" != "true" ]; then
+    DEPLOY_VERSION=$(semver --increment minor $DEPLOY_VERSION)
+  fi
 else
   DEPLOY_VERSION="1.0.0"
 fi
@@ -100,16 +102,16 @@ echo "┏━━━━━━━━━━━━━━━━━━┓"
 echo "┃ Applying patches ┃"
 echo "┗━━━━━━━━━━━━━━━━━━┛"
 
-# escape special charaters in json string
+# escape special characters in json string
 for file in ./patches/*.sh; do
   echo "Applying '$(basename $file)'"
   . $file
 done
 check_error
 
-echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
-echo "┃ Generating new API version ┃ $DEPLOY_VERSION"
-echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃ Generating API version ┃ $DEPLOY_VERSION"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo "┏━━━━━━━━━━━━┓"
 echo "┃ Build Hash ┃ $BUILD_HASH"
 echo "┗━━━━━━━━━━━━┛"
@@ -122,8 +124,6 @@ if [ "$DEPLOY_VERSION" = "" ] && [ "$BUILD_HASH" = "" ]; then
 fi
 
 autorest ./config-file.yml \
-  --add-credentials=false \
-  --azure-sdk-for-js=false \
   --input-file=$SWAGGER_FILE_V3 \
   --output-folder=$AUTOREST_OUTPUT_FOLDER \
   --package-name=$PACKAGE_NAME \
@@ -135,13 +135,32 @@ check_error
 git apply ./patches/rollup.config.patch
 
 cp ./.npmignore $AUTOREST_OUTPUT_FOLDER/
-cd $AUTOREST_OUTPUT_FOLDER
+cp ./README.md $AUTOREST_OUTPUT_FOLDER/
 
+PACKAGE_AUTHOR=$(jq -r '.author' ./package.json)
+PACKAGE_BUG_URL=$(jq -r '.bugs.url' ./package.json)
+PACKAGE_KEYWORDS=$(jq -rc '.keywords' ./package.json)
+PACKAGE_REPO_URL=$(jq -r '.repository.url' ./package.json)
+
+yarn sort-package-json $AUTOREST_OUTPUT_FOLDER/package.json
+
+cd $AUTOREST_OUTPUT_FOLDER
 FILE=$(cat ./package.json)
-echo $FILE | jq '.buildHash = "'$BUILD_HASH'"' > ./package.json
+FILE=$(echo $FILE | jq '.buildHash = "'"$BUILD_HASH"'"')
+FILE=$(echo $FILE | jq '.author = "'"$PACKAGE_AUTHOR"'"')
+FILE=$(echo $FILE | jq '.bugs.url = "'"$PACKAGE_BUG_URL"'"')
+FILE=$(echo $FILE | jq '.keywords = '$PACKAGE_KEYWORDS)
+FILE=$(echo $FILE | jq '.repository.url = "'"$PACKAGE_REPO_URL"'"')
+FILE=$(echo $FILE | jq 'del(.files)')
+echo $FILE > ./package.json
+
+yarn install --no-immutable
+
+if [ "$PACKAGE_TEST_BUILD" = "true" ]; then
+  yarn run build
+fi
 
 if [ "$PACKAGE_PUBLISH" = "true" ]; then
-  yarn
-  yarn npm publish && sleep 10
+  yarn npm publish --access public && sleep 10
   yarn npm tag add $PACKAGE_NAME@$DEPLOY_VERSION $BUILD_HASH
 fi

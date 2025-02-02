@@ -1,4 +1,7 @@
-eol: lf
+add-credentials: false
+azure-sdk-for-js: false
 clear-output-folder: false
 generate-metadata: true
+hide-client: true
 typescript: true
+eol: lf

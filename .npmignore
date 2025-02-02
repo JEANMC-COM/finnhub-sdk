@@ -1,4 +1,5 @@
 review/**/*
+rollup.*
 src/**/*
-rollup.config.js
+temp/**/*
 tsconfig.json
