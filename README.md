@@ -1,5 +1,8 @@
 # Finnhub API client library for JavaScript
 
+[![NPM Version](https://img.shields.io/npm/v/%40jeanmc%2Ffinnhub-sdk)](https://www.npmjs.com/package/@jeanmc/finnhub-sdk)
+[![NPM Downloads](https://img.shields.io/npm/dw/%40jeanmc%2Ffinnhub-sdk)](https://www.npmjs.com/package/@jeanmc/finnhub-sdk)
+
 This package contains an isomorphic SDK (runs both in Node.js and in browsers) for Finnhub API client.
 
 ## Getting started
