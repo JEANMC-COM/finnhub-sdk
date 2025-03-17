@@ -127,9 +127,7 @@ autorest ./config-file.yml \
   --input-file=$SWAGGER_FILE_V3 \
   --output-folder=$AUTOREST_OUTPUT_FOLDER \
   --package-name=$PACKAGE_NAME \
-  --package-version=$DEPLOY_VERSION \
-  --use=@autorest/modelerfour \
-  --use=@autorest/typescript
+  --package-version=$DEPLOY_VERSION
 check_error
 
 git apply ./patches/rollup.config.patch

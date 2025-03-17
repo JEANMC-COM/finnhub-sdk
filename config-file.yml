@@ -5,3 +5,9 @@ generate-metadata: true
 hide-client: true
 typescript: true
 eol: lf
+
+version: 3.10.4
+
+use:
+  - "@autorest/modelerfour@4.27.0"
+  - "@autorest/typescript@6.0.35"

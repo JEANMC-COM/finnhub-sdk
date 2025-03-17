@@ -1,8 +1,8 @@
 diff --git a/lib/PackageJsonLookup.js b/lib/PackageJsonLookup.js
-index 4c7bd8e74960d271192d4415627ad8de7dd1b238..f529e218d4c05ac684b92018202588443322c9d8 100644
+index 51d590ab2ad64398d1b073dcd2e30458cfc56edc..adb0c019d3935f36d80c21b16f04b667c38f2cca 100644
 --- a/lib/PackageJsonLookup.js
 +++ b/lib/PackageJsonLookup.js
-@@ -123,6 +123,15 @@ class PackageJsonLookup {
+@@ -133,6 +133,15 @@ class PackageJsonLookup {
       * @returns an absolute path to a folder containing a package.json file
       */
      tryGetPackageFolderFor(fileOrFolderPath) {

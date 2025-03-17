@@ -20,7 +20,7 @@
     "packages/*"
   ],
   "resolutions": {
-    "@rushstack/node-core-library@npm:5.11.0": "patch:@rushstack/node-core-library@npm%3A5.11.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.11.0-883ece811c.patch"
+    "@rushstack/node-core-library@npm:5.12.0": "patch:@rushstack/node-core-library@npm%3A5.12.0#~/.yarn/patches/@rushstack-node-core-library-npm-5.12.0-470a246bdf.patch"
   },
   "devDependencies": {
     "sort-package-json": "^2.14.0"
